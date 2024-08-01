@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid"; // Import uuidv4
-import analyzeJobPosts from "./(helpers)/analyzeJobPosts";
+import { generateContent } from "./(helpers)/generateContent";
 
 
 interface FormData {
@@ -11,11 +11,12 @@ interface FormData {
 
 const App: React.FC = () => {
   const { handleSubmit, register, reset, formState: { errors } } = useForm<FormData>();
-  const [results, setResults] = useState<{ [key: number]: number }>({});
+  const [results, setResults] = useState<string>("");
 
-  const onSubmit = handleSubmit((data: FormData) => {
-    const newResults = analyzeJobPosts(data.posts.split("\n"));
-    setResults(newResults);
+  const onSubmit = handleSubmit(async (data: FormData) => {
+    const newResults = await generateContent(data.posts);
+    const extractedText = newResults.candidates[0].content.parts[0].text;
+    setResults(extractedText);
     reset();
   });
 
@@ -29,7 +30,7 @@ const App: React.FC = () => {
           each role.
         </p>
       </div>
-      <form onSubmit={onSubmit} className="w-full max-w-md">
+      <form onSubmit={onSubmit} className="w-full max-w-md bg-blue-500">
         <textarea
           {...register("posts", { required: true })}
           placeholder="Enter job posts here, one per line"
@@ -47,16 +48,10 @@ const App: React.FC = () => {
           Analyze
         </button>
       </form>
-      {Object.keys(results).length > 0 && (
-        <div className="mt-8 text-center">
+      {results && (
+        <div className="mt-8 text-center bg-blue-500">
           <h2 className="text-2xl font-bold">Results</h2>
-          <ul>
-            {Object.entries(results).map(([years, count]) => (
-              <li key={uuidv4()}>
-                {years} years of experience: {count} job post(s)
-              </li>
-            ))}
-          </ul>
+          <pre className="text-left bg-blue-500 p-4 rounded container">{results}</pre>
         </div>
       )}
     </div>
